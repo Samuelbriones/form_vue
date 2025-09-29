@@ -1,42 +1,53 @@
 <template>
-  <div style="margin: 20px;">
+  <div class="container">
     <h1>Formulario de Registro (Vue)</h1>
 
-    <form @submit.prevent="handleSubmit">
+    <!-- Mostrar errores -->
+    <div v-if="errors.length" class="alert">
+      <ul>
+        <li v-for="(err, i) in errors" :key="i">{{ err }}</li>
+      </ul>
+    </div>
+
+    <form @submit.prevent="handleSubmit" class="formulario">
       <input type="text" v-model="form.dni" placeholder="DNI" />
-      <br />
       <input type="text" v-model="form.nombres" placeholder="Nombres" />
-      <br />
       <input type="text" v-model="form.apellidos" placeholder="Apellidos" />
-      <br />
       <input type="date" v-model="form.fechaNacimiento" />
-      <br />
-      <div>
-        Género:
+
+      <div class="radio-group">
+        <span>Género:</span>
         <label>
-          <input type="radio" value="Masculino" v-model="form.genero" /> Masculino
+          <input type="radio" value="Masculino" v-model="form.genero" />
+          Masculino
         </label>
         <label>
-          <input type="radio" value="Femenino" v-model="form.genero" /> Femenino
+          <input type="radio" value="Femenino" v-model="form.genero" />
+          Femenino
         </label>
       </div>
-      <br />
+
       <select v-model="form.ciudad">
         <option value="">Seleccione ciudad</option>
         <option>Guayaquil</option>
-        <option>Quito</option>
+        <option>Milagro</option>
         <option>Cuenca</option>
       </select>
-      <br />
-      <button type="submit">{{ editIndex !== null ? "Actualizar" : "Agregar" }}</button>
+
+      <button type="submit" class="btn">
+        {{ editIndex !== null ? "Actualizar" : "Agregar" }}
+      </button>
     </form>
 
     <h2>Usuarios Registrados</h2>
-    <ul>
-      <li v-for="(u, i) in usuarios" :key="i">
-        {{ u.dni }} - {{ u.nombres }} {{ u.apellidos }} ({{ u.genero }}, {{ u.ciudad }})
-        <button @click="handleEdit(i)">Editar</button>
-        <button @click="handleDelete(i)">Eliminar</button>
+    <ul class="lista">
+      <li v-for="(u, i) in usuarios" :key="i" class="usuario-item">
+        <strong>{{ u.dni }}</strong> - {{ u.nombres }} {{ u.apellidos }} 
+        ({{ u.genero }}, {{ u.ciudad }})
+        <div>
+          <button class="btn-edit" @click="handleEdit(i)">Editar</button>
+          <button class="btn-delete" @click="handleDelete(i)">Eliminar</button>
+        </div>
       </li>
     </ul>
   </div>
@@ -57,12 +68,46 @@ export default {
       ciudad: ""
     });
     const editIndex = ref(null);
+    const errors = ref([]);
+
+    // Validaciones
+    const validateForm = () => {
+      const newErrors = [];
+
+      if (!form.dni) {
+        newErrors.push("El DNI es obligatorio");
+      } else if (!/^[0-9]{8,10}$/.test(form.dni)) {
+        newErrors.push("El DNI debe ser numérico y tener entre 8 y 10 dígitos");
+      }
+
+      if (!form.nombres || form.nombres.length < 2) {
+        newErrors.push("El nombre debe tener al menos 2 caracteres");
+      }
+
+      if (!form.apellidos || form.apellidos.length < 2) {
+        newErrors.push("El apellido debe tener al menos 2 caracteres");
+      }
+
+      if (!form.fechaNacimiento) {
+        newErrors.push("Debe ingresar una fecha de nacimiento");
+      } else if (new Date(form.fechaNacimiento) > new Date()) {
+        newErrors.push("La fecha de nacimiento no puede ser futura");
+      }
+
+      if (!form.genero) {
+        newErrors.push("Debe seleccionar un género");
+      }
+
+      if (!form.ciudad) {
+        newErrors.push("Debe seleccionar una ciudad");
+      }
+
+      errors.value = newErrors;
+      return newErrors.length === 0;
+    };
 
     const handleSubmit = () => {
-      if (!form.dni || !form.nombres || !form.apellidos || !form.genero || !form.ciudad) {
-        alert("Todos los campos son obligatorios");
-        return;
-      }
+      if (!validateForm()) return;
 
       if (editIndex.value !== null) {
         usuarios.value[editIndex.value] = { ...form };
@@ -72,11 +117,12 @@ export default {
       }
 
       // Resetear formulario
-      Object.keys(form).forEach(key => form[key] = "");
+      Object.keys(form).forEach((key) => (form[key] = ""));
+      errors.value = [];
     };
 
     const handleEdit = (index) => {
-      Object.keys(form).forEach(key => form[key] = usuarios.value[index][key]);
+      Object.keys(form).forEach((key) => (form[key] = usuarios.value[index][key]));
       editIndex.value = index;
     };
 
@@ -84,14 +130,7 @@ export default {
       usuarios.value.splice(index, 1);
     };
 
-    return { usuarios, form, editIndex, handleSubmit, handleEdit, handleDelete };
+    return { usuarios, form, editIndex, errors, handleSubmit, handleEdit, handleDelete };
   }
 };
 </script>
-
-<style>
-input, select, button {
-  margin: 5px;
-  padding: 8px;
-}
-</style>
