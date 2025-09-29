@@ -2,7 +2,6 @@
   <div class="container">
     <h1>Formulario de Registro (Vue)</h1>
 
-    <!-- Mostrar errores -->
     <div v-if="errors.length" class="alert">
       <ul>
         <li v-for="(err, i) in errors" :key="i">{{ err }}</li>
