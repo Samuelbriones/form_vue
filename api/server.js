@@ -1,4 +1,3 @@
-// Backend básico Express para exponer la base de datos SQLite
 const express = require('express');
 const cors = require('cors');
 const bodyParser = require('body-parser');
