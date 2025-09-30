@@ -53,11 +53,12 @@
 </template>
 
 <script>
-import { reactive, ref } from "vue";
+
+import { reactive, ref, onMounted } from "vue";
 
 export default {
   setup() {
-    const usuarios = ref([]);
+  const usuarios = ref([]);
     const form = reactive({
       dni: "",
       nombres: "",
@@ -66,7 +67,8 @@ export default {
       genero: "",
       ciudad: ""
     });
-    const editIndex = ref(null);
+  const editIndex = ref(null);
+  const editId = ref(null);
     const errors = ref([]);
 
     // Validaciones
@@ -105,14 +107,47 @@ export default {
       return newErrors.length === 0;
     };
 
-    const handleSubmit = () => {
+
+    // Cargar usuarios desde la API
+    const fetchUsuarios = async () => {
+      try {
+        const res = await fetch("http://localhost:3001/usuarios");
+        usuarios.value = await res.json();
+      } catch (e) {
+        errors.value = ["Error al cargar usuarios desde el servidor"]; 
+      }
+    };
+
+    onMounted(fetchUsuarios);
+
+    // Agregar o actualizar usuario
+    const handleSubmit = async () => {
       if (!validateForm()) return;
 
-      if (editIndex.value !== null) {
-        usuarios.value[editIndex.value] = { ...form };
-        editIndex.value = null;
+      if (editId.value !== null) {
+        try {
+          await fetch(`http://localhost:3001/usuarios/${editId.value}`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(form)
+          });
+          editId.value = null;
+          editIndex.value = null;
+          await fetchUsuarios();
+        } catch (e) {
+          errors.value = ["Error al actualizar usuario"];
+        }
       } else {
-        usuarios.value.push({ ...form });
+        try {
+          await fetch("http://localhost:3001/usuarios", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(form)
+          });
+          await fetchUsuarios();
+        } catch (e) {
+          errors.value = ["Error al agregar usuario"];
+        }
       }
 
       // Resetear formulario
@@ -121,15 +156,24 @@ export default {
     };
 
     const handleEdit = (index) => {
-      Object.keys(form).forEach((key) => (form[key] = usuarios.value[index][key]));
+      const usuario = usuarios.value[index];
+      Object.keys(form).forEach((key) => (form[key] = usuario[key]));
       editIndex.value = index;
+      editId.value = usuario.id;
     };
 
-    const handleDelete = (index) => {
-      usuarios.value.splice(index, 1);
+
+    const handleDelete = async (index) => {
+      const usuario = usuarios.value[index];
+      try {
+        await fetch(`http://localhost:3001/usuarios/${usuario.id}`, { method: "DELETE" });
+        await fetchUsuarios();
+      } catch (e) {
+        errors.value = ["Error al eliminar usuario"];
+      }
     };
 
-    return { usuarios, form, editIndex, errors, handleSubmit, handleEdit, handleDelete };
+  return { usuarios, form, editIndex, errors, handleSubmit, handleEdit, handleDelete };
   }
 };
 </script>
