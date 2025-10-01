@@ -9,7 +9,6 @@ const PORT = 3001;
 app.use(cors());
 app.use(bodyParser.json());
 
-// Obtener todos los usuarios
 app.get('/usuarios', (req, res) => {
   db.all('SELECT * FROM usuarios', [], (err, rows) => {
     if (err) {
